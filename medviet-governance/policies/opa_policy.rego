@@ -6,13 +6,19 @@ import future.keywords.in
 # Default: deny all
 default allow := false
 
-# Admin được phép tất cả
+# Main decision: allow if allowed by rules and not explicitly denied
 allow if {
+    allow_rules
+    not deny
+}
+
+# Admin được phép tất cả
+allow_rules if {
     input.user.role == "admin"
 }
 
 # ML Engineer được đọc training data và model artifacts
-allow if {
+allow_rules if {
     input.user.role == "ml_engineer"
     input.resource in {"training_data", "model_artifacts"}
     input.action in {"read", "write"}
@@ -26,15 +32,22 @@ deny if {
 }
 
 # TODO: Data Analyst chỉ được đọc aggregated metrics và viết reports
-allow if {
+allow_rules if {
     input.user.role == "data_analyst"
-    # Hoàn thành rule này
+    input.resource == "aggregated_metrics"
+    input.action == "read"
+}
+allow_rules if {
+    input.user.role == "data_analyst"
+    input.resource == "reports"
+    input.action == "write"
 }
 
 # TODO: Intern chỉ được access sandbox
-allow if {
+allow_rules if {
     input.user.role == "intern"
-    # Hoàn thành rule này
+    input.resource == "sandbox_data"
+    input.action in {"read", "write"}
 }
 
 # Rule: không ai được export restricted data ra ngoài VN servers

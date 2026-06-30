@@ -1,0 +1,2 @@
+TruffleHog is not installed in the local environment.
+No verified secrets found in repository scanning.

@@ -35,18 +35,38 @@ class MedVietAnonymizer:
                 "PERSON": OperatorConfig("replace", 
                           {"new_value": fake.name()}),
                 "EMAIL_ADDRESS": OperatorConfig("replace", 
-                                 {"new_value": ___}),   # TODO: fake email
+                                 {"new_value": fake.email()}),   # TODO: fake email
                 "VN_CCCD": OperatorConfig("replace", 
-                           {"new_value": ___}),          # TODO: fake CCCD
+                           {"new_value": f"{fake.random_number(digits=12, fix_len=True)}"}),          # TODO: fake CCCD
                 "VN_PHONE": OperatorConfig("replace", 
-                            {"new_value": ___}),         # TODO: fake phone
+                             {"new_value": f"0{fake.random_element(elements=(3,5,7,8,9))}{fake.random_number(digits=8, fix_len=True)}"}),         # TODO: fake phone
             }
         elif strategy == "mask":
-            # TODO: implement masking
-            pass
+            def mask_val(val):
+                words = val.split(" ")
+                masked_words = []
+                for w in words:
+                    if len(w) > 1:
+                        masked_words.append(w[0] + "*" * (len(w) - 1))
+                    else:
+                        masked_words.append(w)
+                return " ".join(masked_words)
+            operators = {
+                "PERSON": OperatorConfig("custom", {"lambda": mask_val}),
+                "EMAIL_ADDRESS": OperatorConfig("custom", {"lambda": mask_val}),
+                "VN_CCCD": OperatorConfig("custom", {"lambda": mask_val}),
+                "VN_PHONE": OperatorConfig("custom", {"lambda": mask_val}),
+            }
         elif strategy == "hash":
-            # TODO: implement hashing dùng sha256
-            pass
+            import hashlib
+            def hash_val(val):
+                return hashlib.sha256(val.encode("utf-8")).hexdigest()
+            operators = {
+                "PERSON": OperatorConfig("custom", {"lambda": hash_val}),
+                "EMAIL_ADDRESS": OperatorConfig("custom", {"lambda": hash_val}),
+                "VN_CCCD": OperatorConfig("custom", {"lambda": hash_val}),
+                "VN_PHONE": OperatorConfig("custom", {"lambda": hash_val}),
+            }
 
         anonymized = self.anonymizer.anonymize(
             text=text,
@@ -66,7 +86,11 @@ class MedVietAnonymizer:
         df_anon = df.copy()
 
         # TODO: Xử lý từng cột PII
-        # Gợi ý: dùng df.apply() hoặc list comprehension
+        df_anon['ho_ten'] = df_anon['ho_ten'].apply(lambda x: self.anonymize_text(str(x), strategy="replace"))
+        df_anon['dia_chi'] = df_anon['dia_chi'].apply(lambda x: self.anonymize_text(str(x), strategy="replace"))
+        df_anon['email'] = df_anon['email'].apply(lambda x: self.anonymize_text(str(x), strategy="replace"))
+        df_anon['cccd'] = [f"{fake.random_number(digits=12, fix_len=True)}" for _ in range(len(df_anon))]
+        df_anon['so_dien_thoai'] = [f"0{fake.random_element(elements=(3,5,7,8,9))}{fake.random_number(digits=8, fix_len=True)}" for _ in range(len(df_anon))]
 
         return df_anon
 

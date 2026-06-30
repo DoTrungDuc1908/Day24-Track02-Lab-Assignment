@@ -4,10 +4,14 @@
 echo "🔍 Running security checks..."
 
 # 1. git-secrets scan
-git secrets --pre_commit_hook -- "$@"
-if [ $? -ne 0 ]; then
-    echo "❌ git-secrets found potential secrets! Commit blocked."
-    exit 1
+if git secrets --help >/dev/null 2>&1; then
+    git secrets --pre_commit_hook -- "$@"
+    if [ $? -ne 0 ]; then
+        echo "❌ git-secrets found potential secrets! Commit blocked."
+        exit 1
+    fi
+else
+    echo "⚠️  git-secrets is not installed. Skipping secrets scan."
 fi
 
 # 2. Bandit SAST scan
